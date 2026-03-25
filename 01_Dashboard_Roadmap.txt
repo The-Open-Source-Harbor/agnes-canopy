@@ -1,0 +1,94 @@
+================================================================================
+  Baltimore City Health & Economic Dashboard — Roadmap
+  March 2026
+================================================================================
+
+================================================================================
+  1. CURRENT STATE
+================================================================================
+
+Deployed app (example):
+  https://bravealex1-dashboard-update-baltimore-dashboard-updated-eyz4xb.streamlit.app/
+
+Stack: Python 3.11+, Streamlit, Plotly, Pandas, NumPy.
+
+Data: tract-level indicators (35 health + 56 economic + 30 CDC PLACES), 199
+census tracts, Baltimore City (FIPS 24510), reference year 2022. Primary file:
+data/integrated/baltimore_integrated_with_places_2022.csv (legacy fallback:
+baltimore_integrated_expanded_2022.csv).
+
+Views:
+  - City Overview: map, table, distribution for selected indicator.
+  - Neighborhood Explorer: tract summary, panels, radar comparison, indicator lookup.
+  - Indicator Analysis: scatter, correlation, any pair of numeric indicators.
+  - About: sources and methodology.
+
+Earlier Capstone baseline: three tract-relevant health metrics, MSA-level BLS/FRED,
+Flask HTML prototype. Current app: full ACS tract integration and Streamlit UI.
+
+================================================================================
+  2. GOALS
+================================================================================
+
+Provide one place to explore neighborhood-level health and economic conditions
+in Baltimore using harmonized public data, with maps and tract drill-down.
+
+Differentiation vs. single-source portals: integrated ACS + clinical prevalence
+(PLACES) at tract scale in one workflow; economic indicators alongside health.
+
+================================================================================
+  3. DATA SOURCES
+================================================================================
+
+In use:
+  - Census ACS 5-year (health and economic indicators, tract level).
+  - CDC PLACES (clinical prevalence, tract level).
+  - BLS / FRED (MSA-level, Capstone legacy; regional tab planned).
+
+Planned / under evaluation:
+  - Open Baltimore (Socrata); spatial aggregation to tract where needed.
+  - BNIA community indicators; tract crosswalk if using CSA geography.
+  - Opportunity Atlas (optional mobility layer).
+
+================================================================================
+  4. SHORT-TERM (1–3 MONTHS)
+================================================================================
+
+  1. Map: real tract centroids (e.g. Census Gazetteer); optional choropleth.
+  2. Multi-year selector where ACS supports it; trend views.
+  3. Zip / neighborhood name search.
+  4. Pilot neighborhood drill-down page (single community template, then generalize).
+  5. BLS/FRED regional tab consolidated in main app.
+
+================================================================================
+  5. LONG-TERM (3–12 MONTHS)
+================================================================================
+
+  - Population-health module branding and integration with broader care-coordination
+    platform (app registry, SSO, optional hosted model tools) — architecture in
+    Technical_Specification.txt.
+  - Optional resident-reported layer (partnership-dependent).
+  - Role-based access: public read-only; researcher CSV/API; clinical single-tract
+    context if embedded in a care platform.
+  - Chatbot / natural-language layer over indicators (optional).
+
+================================================================================
+  6. PARTNERSHIPS (examples)
+================================================================================
+
+  - City open-data programs (Open Baltimore).
+  - BNIA (neighborhood indicators).
+  - Community organizations (ground-truth and collection pilots).
+  - NYU City Health Dashboard (methodology alignment).
+
+================================================================================
+  7. PUBLICATION
+================================================================================
+
+  Working title (example): "Integrating Health and Economic Indicators for Urban
+  Health Intelligence: A Multi-Source Dashboard for Baltimore."
+
+  Status: methods documented in Methods_and_Data_Sources.txt; manuscript drafts
+  in repository Word files where present.
+
+================================================================================

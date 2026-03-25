@@ -1,0 +1,187 @@
+================================================================================
+  Technical Specification
+  Baltimore Dashboard / Agnes Canopy | March 2026
+================================================================================
+
+================================================================================
+  1. USER PERSONAS AND USE CASES
+================================================================================
+
+1.1 Community Resident
+
+Someone living in Baltimore who wants to understand their neighborhood relative
+to the rest of the city. Needs a simple, engaging interface, not a government
+database. Interface should feel personal to Baltimore, not generic.
+
+Use case: A resident in East Baltimore sees their tract has the highest SNAP
+participation rate in the city. They share this with a local nonprofit applying
+for food access funding. The data provides concrete justification.
+
+Design: No technical jargon. Neighborhood names alongside tract IDs. Mobile-
+friendly. Highlight actionable context alongside data.
+
+1.2 Funder / Policymaker
+
+A foundation program officer, city council member, or government agency staff
+who needs to assess where to direct resources. Needs city-wide disparity views,
+evidence to cite in reports or grant applications.
+
+Use case: A foundation considers a broadband grant. They select the broadband
+indicator, see which tracts have the lowest access, and write a needs assessment.
+
+Design: Export-ready maps and charts. Downloadable data. Methodology documented.
+
+1.3 Community Health Worker
+
+A field-based health worker conducting outreach. Needs neighborhood-level risk
+indicators (poverty, food insecurity, uninsured rate, housing instability) and
+the ability to flag high-need tracts for prioritized visits.
+
+Use case: A worker sees a tract has the highest uninsured rate and lowest income
+in the city. They schedule an additional outreach visit and prepare referrals.
+
+Design: Neighborhood Explorer is the primary view. Social determinants prominent.
+Future: field data collection interface linking to More Than a Shop partnership.
+
+1.4 Researcher / Academic
+
+A public health or urban economics researcher studying Baltimore. Needs the
+full indicator dataset downloadable, pipeline documentation for reproducibility,
+and correlation/spatial analysis tools.
+
+Use case: A PhD student downloads the 91-indicator CSV, merges with survey data,
+and cites the pipeline documentation in their methods section.
+
+Design: Researcher login with CSV download and API access. Data dictionary
+and pipeline docs linked from dashboard.
+
+1.5 Clinician / Care Coordinator (Agnes integration, future)
+
+A clinician or care manager in Agnes reviewing a specific patient. Needs to see
+neighborhood-level social determinants for the patient's census tract to inform
+care planning and referrals.
+
+Use case: A care coordinator reviews a patient with uncontrolled diabetes. Agnes
+passes the patient's tract to Canopy, which shows above-average food insecurity
+and below-average income, shaping the care plan.
+
+Design: Agnes SSO passes tract ID automatically. Clinician view is a focused
+single-tract summary. See Section 4 for Agnes integration.
+
+================================================================================
+  2. VIEWS AND NAVIGATION
+================================================================================
+
+2.1 Current Views (implemented)
+
+  City Overview (Map & Data)
+    Scatter map of 199 tracts colored by selected indicator. Side-by-side data
+    table (top 50 tracts). Histogram and box plot. Sidebar: category + indicator.
+
+  Neighborhood Explorer
+    Select a census tract. Key metrics with delta vs. city average. Housing and
+    economic panel. Health and education panel. Radar chart vs. city average.
+
+  Indicator Analysis
+    X/Y scatter plot with OLS trendline. Correlation coefficient with label.
+
+  About
+    Data sources, data quality note, methodology.
+
+2.2 Planned Views
+
+  Regional Economic Context: BLS and FRED time-series as a tab within the
+    main app. Labor market trends, CPI, home price index for Baltimore MSA.
+
+  Community Voice (future): Resident-reported data from Priscilla/Homeulo.
+    Toggle: compare government-reported vs. resident-reported by tract.
+
+2.3 Navigation
+
+  Current: radio buttons in the left sidebar.
+  When views expand: top nav bar (Overview | Neighborhoods | Indicators |
+    Economic Context | Community Voice | About). Sidebar for filters.
+
+================================================================================
+  3. ACCESS LEVELS AND ROLES
+================================================================================
+
+  Current: No login. Fully public. Correct for this phase.
+
+  Phase 2 roles:
+
+  Public (no login): City Overview, Neighborhood Explorer, Indicator Analysis,
+    About. Aggregate tract data only. No download.
+
+  Researcher (login): All public views. CSV download. API endpoint.
+    Data dictionary and pipeline documentation page.
+    Authentication: streamlit-authenticator (short-term) or Agnes OAuth.
+
+  Clinician / Care Coordinator (Agnes login): All public views.
+    Single-tract neighborhood context for a patient's address.
+    Social determinant flags for care planning.
+    Authentication: Agnes platform SSO (OAuth2 / OpenID Connect).
+
+  All data shown is aggregate (census tract level); no individual data.
+
+================================================================================
+  4. SINGLE DASHBOARD VS. MULTIPLE DASHBOARDS
+================================================================================
+
+  Current situation:
+    Baltimore_Dashboard_Updated.py: 91-indicator Streamlit app.
+    Baltimore_MetricsWithMap.py: Capstone Flask app (3 indicators + chatbot).
+    blsandfreddata.streamlit.app: BLS/FRED time series (partially broken).
+
+  Recommendation: Consolidate into one Streamlit application.
+    - One URL for users, citations, and Agnes integration.
+    - Merge BLS/FRED as a "Regional Economic Trends" tab.
+    - Port the Agno chatbot into the Streamlit app.
+    - Retire Baltimore_MetricsWithMap.py (Flask) once Streamlit has parity.
+
+================================================================================
+  5. AGNES CANOPY INTEGRATION PLAN
+================================================================================
+
+Agnes is an open-source care coordination platform (Open Source Harbor).
+Components: coordination dashboard, app registry, Orbit (platform-hosted model),
+authentication, consent management, security.
+Data standards: FHIR (clinical), OMOP (research / cross-site).
+
+Canopy = population health and economic intelligence module of Agnes.
+Connects as a Level 2 app via FHIR. Provides city/neighborhood context
+to Agnes users looking at individual patient or research data.
+
+Phased integration:
+
+  Phase 0 (now): Standalone Streamlit app. No Agnes connection.
+
+  Phase 1: Register in Agnes app registry. Canopy appears in coordination
+    dashboard. Users click to open in new tab. No data flow yet.
+
+  Phase 2: Agnes SSO. Canopy accepts login tokens from Agnes.
+    Clinician role activates; Agnes passes patient census tract to Canopy.
+
+  Phase 3: Orbit integration. Hosted model queries Canopy data as a tool.
+    Example: coordinator asks Orbit about a patient's neighborhood; Orbit
+    calls Canopy API and returns tract-level indicators.
+
+  Phase 4: Community Voice. Resident-reported data visible in Canopy.
+
+Technical prerequisites:
+  - Stable deployed URL (done).
+  - REST API endpoint: /api/tract/{geoid} returning JSON of all indicators.
+  - Agnes app registry support (Agnes dev team, future).
+
+================================================================================
+  6. OPEN DECISIONS
+================================================================================
+
+  - Pilot tract or neighborhood for dedicated drill-down.
+  - Timeline for external grants / platform integration milestones.
+  - Partner meetings: scope (open data, BNIA) and deliverables.
+  - Audience priority: resident-facing simplicity vs. researcher export vs. clinical
+    embed (affects navigation and access).
+  - Cloud credits / hosting entity (nonprofit registration, billing).
+
+================================================================================

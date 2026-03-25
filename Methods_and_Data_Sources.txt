@@ -1,0 +1,125 @@
+================================================================================
+  Methods and Data Sources
+  Baltimore City Health & Economic Dashboard | March 2026
+================================================================================
+
+This document describes data sources, extraction methods, update frequencies,
+and pipeline architecture. It extends the Capstone report (Zhu, 2025); Sections
+below cover tract-level expansion, CDC PLACES, integration, and validation.
+
+================================================================================
+  1. DATA SOURCES
+================================================================================
+
+1.1 Health Indicators (ACS)
+
+The Capstone baseline uses three health-related indicators (broadband, child
+poverty, high-school completion). The current dashboard uses 35 health-related
+indicators aligned with the NYU City Health Dashboard framing. Data: U.S. Census
+Bureau American Community Survey (ACS) 5-year estimates, 2022, 199 census tracts
+in Baltimore City (FIPS 24510). ACS 5-year releases are annual (typically
+December). Access via Census API; Subject (S) and Detailed (B) tables are
+requested in batches (~15 variables per request).
+
+1.2 Economic Indicators — Tract Level (ACS)
+
+The Capstone uses BLS LAUS, CES, CPI, FRED, and FHFA at MSA level. The dashboard
+adds 56 tract-level economic indicators from Census ACS for neighborhood
+drill-down. Indicators include median household income, poverty rate,
+unemployment rate, Gini index, housing cost burden, SNAP participation, public
+assistance, median earnings, long commute rate, homeownership, vacancy, and
+related variables. Source: ACS 5-year 2022. Access: Census API; tables include
+B19013, B23025, B25070, B25091, B19083, B22003, B19058, B20017, B08303, merged
+on state, county, and tract.
+
+1.3 CDC PLACES — Clinical Prevalence
+
+CDC PLACES provides tract-level crude prevalence estimates. Thirty measures for
+Baltimore City are retrieved via the CDC PLACES Socrata API
+(https://chronicdata.cdc.gov/resource/cwsq-ngmh.json), countyfips=24510, crude
+prevalence. Script: fetch_cdc_places.py. Merge key: locationid (11-digit
+TRACTFIPS) to state/county/tract. Output: baltimore_integrated_with_places_2022.csv.
+Fill rate: 198/199 tracts (99%). Release year follows CDC publication schedule.
+
+1.4 Update Frequencies (summary)
+
+ACS (health + tract economic): annual 5-year release. BLS/FRED (Capstone MSA):
+monthly to annual by series. CDC PLACES: annual. Reference year for alignment:
+2022 (ACS pool 2018–2022).
+
+================================================================================
+  2. EXTRACTION AND INTEGRATION
+================================================================================
+
+2.1 Health: expand_health_indicators.py — batched Census API requests, merge on
+state/county/tract, derived rates (poverty, uninsured, etc.), CSV/JSON output.
+
+2.2 Economic: fetch_census_economic_data.py (base variables) and
+expand_economic_indicators.py (extended tables, derived rates), merged onto the
+integrated health–economic table.
+
+2.3 Integration: integrate_economic_data.py merges health and economic extracts
+on state, county, tract. expand_economic_indicators.py requires this merged file.
+Geographic key: single state/county/tract for all ACS-derived data. MSA-level
+BLS/FRED remain separate for regional context.
+
+2.4 Validation: validate_data_quality.py — completeness, range checks, missing
+data summary. Cross-source checks across overlapping indicators are planned.
+
+2.5 Post-processing: clean_sentinel_values.py replaces Census missing codes
+(-666666666, -666666667) with NaN; flags small-population / institutional tracts;
+invalid rate values capped. fetch_cdc_places.py merges PLACES onto the expanded
+tract file. Orchestration: pipeline_data.py (core steps plus optional post-steps
+and sync to deployment folder).
+
+================================================================================
+  3. PIPELINE ARCHITECTURE
+================================================================================
+
+Single entry point: pipeline_data.py. Core sequence: (1) expand_health_indicators,
+(2) fetch_census_economic_data, (3) integrate_economic_data, (4)
+expand_economic_indicators, (5) validate_data_quality. Post-processing: sentinel
+clean, CDC PLACES merge, optional copy to packaged app folder. Flags: --extract,
+--validate, --no-post, --no-sync, --no-places.
+
+================================================================================
+  4. DATA INTEGRATION FRAMEWORK
+================================================================================
+
+Geographic: one key (state, county, tract) for ACS tract data. Temporal: reference
+year 2022. Variable: standardized names; rates from counts; Census missing codes
+replaced with NaN before analysis. Planned: formal data dictionary as sources
+grow.
+
+================================================================================
+  5. SOURCES SUMMARY TABLE
+================================================================================
+
+  Source              | Geography   | Indicators | Update   | Status
+  --------------------|-------------|------------|----------|----------
+  Census ACS (health) | Tract       | 35         | Annual   | In use
+  Census ACS (econ)   | Tract       | 56         | Annual   | In use
+  CDC PLACES          | Tract       | 30         | Annual   | In use
+  BLS (Capstone)      | MSA/County  | varies     | Monthly  | Partial
+  FRED (Capstone)     | MSA         | varies     | varies   | Partial
+
+  Tract-level column count in integrated file: 121 metrics (35 + 56 + 30) plus
+  auxiliary columns (identifiers, flags) as applicable.
+
+================================================================================
+  References
+================================================================================
+
+  Zhu, Q. (Alex). (2025). Baltimore Economic and Health Intelligence Dashboard,
+  Capstone Project Report. Johns Hopkins University. December 2025.
+
+  U.S. Census Bureau. American Community Survey 5-Year Estimates.
+  https://api.census.gov/
+
+  NYU Langone Health. City Health Dashboard.
+  https://www.cityhealthdashboard.com/
+
+  Centers for Disease Control and Prevention. PLACES.
+  https://www.cdc.gov/places/
+
+================================================================================

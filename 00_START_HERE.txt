@@ -1,0 +1,59 @@
+================================================================================
+  Baltimore City Health & Economic Dashboard — deployment package
+  March 2026
+================================================================================
+
+DEPLOYED APP (if hosted)
+  https://bravealex1-dashboard-update-baltimore-dashboard-updated-eyz4xb.streamlit.app/
+
+================================================================================
+  RUN LOCALLY
+================================================================================
+
+  Double-click RUN_LOCAL.bat   (Windows)
+
+  Or:
+    cd <this folder>
+    pip install -r requirements.txt
+    streamlit run Baltimore_Dashboard_Updated.py
+
+================================================================================
+  CONTENTS
+================================================================================
+
+  Baltimore_Dashboard_Updated.py
+  data/integrated/baltimore_integrated_with_places_2022.csv
+  data/integrated/baltimore_integrated_expanded_2022.csv
+  requirements.txt
+  .streamlit/config.toml
+  RUN_LOCAL.bat
+  RUN_LOCAL.ps1
+
+  01_Dashboard_Roadmap.txt
+  03_Technical_Specification.txt
+  Methods_and_Data_Sources.txt
+
+================================================================================
+  REGENERATE DATA (repository root, not this folder)
+================================================================================
+
+  cd <path-to-Dashboard-Project-main>
+  python pipeline_data.py
+
+  Full sequence: Census extract → integrate → expand → validate → sentinel clean
+  → CDC PLACES merge → copies integrated CSVs here if this folder exists.
+
+  Options: --extract (skip validate/post), --no-post, --no-sync, --no-places
+
+================================================================================
+  DATA STATUS (snapshot)
+================================================================================
+
+  Tract-level: 199 census tracts (Baltimore City). Integrated file with PLACES:
+  121 metrics (35 health + 56 economic + 30 CDC PLACES) plus identifiers and
+  quality flags. Census missing codes replaced with NaN; institutional tract
+  flagged where applicable.
+
+  See Methods_and_Data_Sources.txt for sources and pipeline.
+
+================================================================================
