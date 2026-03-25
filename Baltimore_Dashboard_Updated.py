@@ -89,24 +89,43 @@ def _build_city_overview_categories(df: pd.DataFrame) -> dict[str, dict[str, str
 
 
 @st.cache_data
+def _first_existing(*paths: str) -> str | None:
+    for p in paths:
+        if p and os.path.exists(p):
+            return p
+    return None
+
+
 def load_data():
-    """Load the expanded integrated dataset."""
+    """Load the expanded integrated dataset.
+
+    Supports both layouts: packaged under ``data/integrated/`` or CSVs in repo
+    root (common when uploading directly to GitHub).
+    """
+    places_candidates = (
+        "data/integrated/baltimore_integrated_with_places_2022.csv",
+        "baltimore_integrated_with_places_2022.csv",
+    )
+    legacy_candidates = (
+        "data/integrated/baltimore_integrated_expanded_2022.csv",
+        "baltimore_integrated_expanded_2022.csv",
+    )
     try:
-        # Prefer CDC PLACES-enriched dataset (121 columns). Fall back to the
-        # legacy 91-column dataset for older deployments.
-        places_path = "data/integrated/baltimore_integrated_with_places_2022.csv"
-        legacy_path = "data/integrated/baltimore_integrated_expanded_2022.csv"
-
-        if os.path.exists(places_path):
-            return pd.read_csv(places_path)
-
-        return pd.read_csv(legacy_path)
-    except:
+        p = _first_existing(*places_candidates)
+        if p:
+            return pd.read_csv(p)
+        p = _first_existing(*legacy_candidates)
+        if p:
+            return pd.read_csv(p)
         st.error(
-            "Data file not found. Please ensure one of "
-            "`baltimore_integrated_with_places_2022.csv` or "
-            "`baltimore_integrated_expanded_2022.csv` exists in data/integrated/."
+            "Data file not found. Add one of:\n"
+            "- `baltimore_integrated_with_places_2022.csv` (PLACES merge), or\n"
+            "- `baltimore_integrated_expanded_2022.csv`\n"
+            "either in the repo root or under `data/integrated/`."
         )
+        return None
+    except Exception as e:
+        st.error(f"Failed to load CSV: {e}")
         return None
 
 def main():
