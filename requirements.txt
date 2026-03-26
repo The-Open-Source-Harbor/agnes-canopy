@@ -1,29 +1,6 @@
-
+# Minimal deps for Baltimore_Dashboard_Updated.py on Streamlit Cloud.
+# (Do not add crewai/agno/geopandas here — they make cloud install hang or fail.)
+streamlit>=1.38.0
 pandas>=2.0
 plotly>=5.0
-requests>=2.31
 numpy>=1.26
-
-# Optional for polygons:
-geopandas>=0.13
-shapely>=2.0
-
-# Optional — natural-language chat in some dashboards:
-# CrewAI — BLS_and_FRED_Data_Interface.py
-crewai>=0.28.0
-
-# Agno — Baltimore_MetricsWithMap.py (when OPENAI_API_KEY set)
-agno
-
-# For .env file support:
-python-dotenv>=1.0.0
-
-# For date manipulation:
-python-dateutil>=2.8.0
-
-# For integrated server mode (optional):
-flask>=2.3.0
-flask-cors>=4.0.0
-
-# For Streamlit dashboard (optional):
-streamlit>=1.38.0
