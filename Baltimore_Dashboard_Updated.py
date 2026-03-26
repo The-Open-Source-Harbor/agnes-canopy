@@ -3,6 +3,8 @@ Baltimore City Health & Economic Dashboard (Streamlit)
 Tract-level indicators: ACS (health + economic) and CDC PLACES where available.
 """
 
+from typing import Optional
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -88,8 +90,8 @@ def _build_city_overview_categories(df: pd.DataFrame) -> dict[str, dict[str, str
     return cats
 
 
-@st.cache_data
-def _first_existing(*paths: str) -> str | None:
+def _first_existing(*paths: str) -> Optional[str]:
+    """Resolve first path that exists (do not cache — cwd must be fresh each run)."""
     for p in paths:
         if p and os.path.exists(p):
             return p
@@ -503,35 +505,36 @@ def show_indicator_analysis(df):
             format_func=lambda k: labels[k],
         )
     
-    # Scatter plot
+    # Scatter plot — manual trendline avoids statsmodels dependency
+    pair = df[[x_var, y_var]].dropna()
+    if len(pair) < 2:
+        st.warning("Not enough paired observations.")
+        return
+
     fig = px.scatter(
-        df,
+        pair,
         x=x_var,
         y=y_var,
         title=f"{labels[x_var]} vs {labels[y_var]}",
-        labels={
-            x_var: labels[x_var],
-            y_var: labels[y_var]
-        },
-        trendline="ols",
+        labels={x_var: labels[x_var], y_var: labels[y_var]},
         color_discrete_sequence=['#667eea']
     )
-    
-    fig.update_layout(
-        height=600,
-        plot_bgcolor='white'
+
+    # Add trendline via numpy (no statsmodels needed)
+    m, b = np.polyfit(pair[x_var], pair[y_var], 1)
+    x_range = np.linspace(pair[x_var].min(), pair[x_var].max(), 100)
+    fig.add_scatter(
+        x=x_range, y=m * x_range + b,
+        mode='lines', name='Trend',
+        line=dict(color='#764ba2', dash='dash')
     )
-    
+
+    fig.update_layout(height=600, plot_bgcolor='white')
     st.plotly_chart(fig, use_container_width=True)
-    
-    # Correlation coefficient (pairwise complete)
-    pair = df[[x_var, y_var]].dropna()
-    if len(pair) < 2:
-        st.warning("Not enough paired observations for correlation.")
-        return
+
     corr = pair[x_var].corr(pair[y_var])
     st.metric("Correlation Coefficient", f"{corr:.3f}")
-    
+
     if abs(corr) > 0.7:
         st.success("Strong correlation")
     elif abs(corr) > 0.4:
